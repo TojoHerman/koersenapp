@@ -1,0 +1,66 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply min-h-screen bg-gradient-to-br from-navy-900 via-navy-800 to-slateGlass-800 text-slate-100 antialiased;
+  background-attachment: fixed;
+}
+
+#root {
+  @apply min-h-screen;
+}
+
+.glass-panel {
+  @apply border border-slate-200/15 bg-white/10 backdrop-blur-md shadow-panel;
+}
+
+body.light-theme {
+  @apply text-slate-900;
+  background-image: linear-gradient(135deg, #4a9bb8 0%, #7ec4d8 50%, #a8deeb 100%);
+}
+
+body.light-theme .glass-panel {
+  @apply border-slate-200/50 bg-white/55 text-slate-900;
+}
+
+body.light-theme .glass-panel select,
+body.light-theme .glass-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+body.light-theme .glass-panel textarea {
+  color: #0f172a !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(148, 163, 184, 0.45) !important;
+}
+
+body.light-theme .glass-panel input::placeholder,
+body.light-theme .glass-panel textarea::placeholder {
+  color: rgba(51, 65, 85, 0.75) !important;
+}
+
+body.light-theme .glass-panel select option {
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+.glass-panel select.readable-select {
+  color-scheme: light;
+}
+
+.glass-panel select.readable-select option {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300/20;
+}
