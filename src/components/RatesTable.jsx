@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, ExternalLink, MessageCircle, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ExternalLink, Minus } from "lucide-react";
 import { formatSrd, hasNumericRate, relativeTime } from "../utils/formatters";
 import { isCambioOpenNow, isRateStale } from "../utils/marketState";
 import MiniRateChart from "./MiniRateChart";
@@ -145,10 +145,6 @@ export default function RatesTable({
                 const hasQuote = hasNumericRate(active?.buy) && hasNumericRate(active?.sell);
                 const isOpenNow = isCambioOpenNow(rate.businessHours);
                 const stale = isRateStale(rate.updatedAt, staleThresholdMs);
-                const message = hasQuote
-                  ? `Hallo ${rate.name}, ik wil deze koers reserveren: ${selectedCurrency} buy ${active.buy} / sell ${active.sell}. Tijd: ${new Date().toLocaleString()}`
-                  : `Hallo ${rate.name}, ik zie momenteel 'Geen Koers' in de app. Kunnen jullie de actuele koers delen? Tijd: ${new Date().toLocaleString()}`;
-                const whatsappUrl = `https://wa.me/${rate.whatsappNumber}?text=${encodeURIComponent(message)}`;
 
                 return (
                   <tr key={rate.id} className="border-b border-slate-200/10 text-slate-100/95">
@@ -219,24 +215,14 @@ export default function RatesTable({
                       </div>
                     </td>
                     <td className="px-3 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => window.open(mapUrl, "_blank", "noopener,noreferrer")}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-200/20 px-2 py-1 text-xs text-slate-100 transition hover:bg-white/15"
-                        >
-                          Map View
-                          <ExternalLink size={12} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => window.open(whatsappUrl, "_blank", "noopener,noreferrer")}
-                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/20 px-2 py-1 text-xs text-emerald-100 transition hover:bg-emerald-500/30"
-                        >
-                          <MessageCircle size={12} />
-                          Reserveer deze koers
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => window.open(mapUrl, "_blank", "noopener,noreferrer")}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200/20 px-2 py-1 text-xs text-slate-100 transition hover:bg-white/15"
+                      >
+                        Map View
+                        <ExternalLink size={12} />
+                      </button>
                     </td>
                   </tr>
                 );

@@ -130,11 +130,8 @@ function resolveCurrencyRate({
   const previousSell = previousCurrency?.sell ?? null;
   const previousHasQuote = hasCompleteQuote(previousBuy, previousSell);
 
-  const preservePrevious =
-    !hasIncomingQuote &&
-    previousCurrency &&
-    previousHasQuote &&
-    CUSTOM_OVERRIDE_SOURCES.has(previousCurrency.source);
+  // Keep last known quote when new upstream quote is missing, so rates remain visible 24/7.
+  const preservePrevious = !hasIncomingQuote && previousCurrency && previousHasQuote;
 
   const buy = preservePrevious ? previousBuy : incomingBuy;
   const sell = preservePrevious ? previousSell : incomingSell;
@@ -310,6 +307,21 @@ function keepCustomEntries(currentRates, liveIds) {
   });
 }
 
+function keepMissingLiveEntries(currentRates, liveIds) {
+  if (!Array.isArray(currentRates)) return [];
+
+  return currentRates.filter((item) => {
+    if (liveIds.has(item.id)) return false;
+    const usdSource = item?.rates?.USD?.source || "";
+    if (usdSource === CBVS_REGISTER_SOURCE) return false;
+    if (CUSTOM_OVERRIDE_SOURCES.has(usdSource)) return false;
+
+    const hasUsdQuote = hasCompleteQuote(item?.rates?.USD?.buy ?? null, item?.rates?.USD?.sell ?? null);
+    const hasEurQuote = hasCompleteQuote(item?.rates?.EUR?.buy ?? null, item?.rates?.EUR?.sell ?? null);
+    return hasUsdQuote || hasEurQuote;
+  });
+}
+
 export function createCambioEntry({
   id,
   name,
@@ -379,7 +391,8 @@ export async function refreshMarketRates(currentRates) {
 
     const liveIds = new Set(liveList.map((item) => item.id));
     const customEntries = keepCustomEntries(currentRates, liveIds);
-    return [...liveList, ...customEntries];
+    const missingLiveEntries = keepMissingLiveEntries(currentRates, liveIds);
+    return [...liveList, ...missingLiveEntries, ...customEntries];
   } catch {
     if (currentRates?.length) {
       return currentRates;

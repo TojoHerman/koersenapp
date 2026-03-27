@@ -239,6 +239,11 @@ export default function App() {
     [filteredRatesWithQuotes]
   );
 
+  const allRatesWithQuotesForSelectedCurrency = useMemo(
+    () => rates.filter((rate) => hasQuoteForCurrency(rate, selectedCurrency)),
+    [rates, selectedCurrency]
+  );
+
   const bestBuyId = useMemo(() => {
     if (!freshRatesForSelectedCurrency.length) return null;
     return freshRatesForSelectedCurrency.reduce((best, current) =>
@@ -257,10 +262,16 @@ export default function App() {
     () => freshRatesForSelectedCurrency.find((rate) => rate.id === bestSellId) || null,
     [freshRatesForSelectedCurrency, bestSellId]
   );
-  const bestBuyExchange = useMemo(
-    () => freshRatesForSelectedCurrency.find((rate) => rate.id === bestBuyId) || null,
-    [freshRatesForSelectedCurrency, bestBuyId]
-  );
+  const bestBuyExchangeForConverter = useMemo(() => {
+    const pool = freshRatesForSelectedCurrency.length
+      ? freshRatesForSelectedCurrency
+      : allRatesWithQuotesForSelectedCurrency;
+    if (!pool.length) return null;
+
+    return pool.reduce((best, current) =>
+      current.rates[selectedCurrency].buy < best.rates[selectedCurrency].buy ? current : best
+    );
+  }, [freshRatesForSelectedCurrency, allRatesWithQuotesForSelectedCurrency, selectedCurrency]);
 
   const topViewed = useMemo(
     () => [...rates].sort((a, b) => b.viewsToday - a.viewsToday).slice(0, 5),
@@ -672,8 +683,8 @@ export default function App() {
             amount={amount}
             onAmountChange={setAmount}
             selectedCurrency={selectedCurrency}
-            bestBuyRate={bestBuyExchange?.rates?.[selectedCurrency]?.buy ?? null}
-            bestBuyExchangeName={bestBuyExchange?.name || "Geen koers beschikbaar"}
+            bestBuyRate={bestBuyExchangeForConverter?.rates?.[selectedCurrency]?.buy ?? null}
+            bestBuyExchangeName={bestBuyExchangeForConverter?.name || "Geen koers beschikbaar"}
           />
           <RateAlertCard
             config={rateAlertConfig}
