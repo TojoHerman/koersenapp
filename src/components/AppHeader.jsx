@@ -1,4 +1,5 @@
 import { MoonStar, RefreshCw, Sun } from "lucide-react";
+import { formatSrd } from "../utils/formatters";
 
 export default function AppHeader({
   isDarkMode,
@@ -8,17 +9,8 @@ export default function AppHeader({
   lastSyncLabel,
   goldSpot,
 }) {
-  const goldValue =
-    goldSpot && Number.isFinite(goldSpot.priceUsd)
-      ? new Intl.NumberFormat("en-US", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }).format(goldSpot.priceUsd)
-      : null;
-
-  const goldUpdateLabel = goldSpot?.updatedAt
-    ? new Date(goldSpot.updatedAt).toLocaleTimeString()
-    : null;
+  const goldSrdValue = goldSpot && Number.isFinite(goldSpot.priceSrd) ? formatSrd(goldSpot.priceSrd) : null;
+  const goldUpdateLabel = goldSpot?.updatedAt ? new Date(goldSpot.updatedAt).toLocaleTimeString() : null;
 
   return (
     <header className="glass-panel rounded-3xl p-4 sm:p-6">
@@ -57,15 +49,16 @@ export default function AppHeader({
           Last platform sync: {lastSyncLabel}
         </div>
         <div className="rounded-xl border border-amber-300/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-100">
-          <p className="font-semibold">Gold (XAU/USD)</p>
-          <p className="mt-1 text-sm font-medium text-amber-50">
-            {goldValue ? `$${goldValue}` : "Rate unavailable"}
-          </p>
+          <p className="font-semibold">Gold (XAU/SRD)</p>
+          <p className="mt-1 text-sm font-medium text-amber-50">{goldSrdValue || "Rate unavailable"}</p>
           <p className="mt-1 text-[11px] text-amber-100/80">
-            {goldSpot ? `Source: ${goldSpot.source}${goldUpdateLabel ? ` · ${goldUpdateLabel}` : ""}` : "Live feed"}
+            {goldSpot
+              ? `Source: ${goldSpot.source} | ${goldSpot.conversion}${goldUpdateLabel ? ` | ${goldUpdateLabel}` : ""}`
+              : "Live feed"}
           </p>
         </div>
       </div>
     </header>
   );
 }
+

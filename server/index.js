@@ -119,7 +119,30 @@ async function getGoldSpot() {
     return goldCache.payload;
   }
 
-  const payload = await fetchGoldSpot();
+  const [goldUsdPayload, marketPayload] = await Promise.all([fetchGoldSpot(), getLiveMarket()]);
+  const directLiveSources = marketPayload.rates.filter(
+    (item) => item?.rates?.USD?.source !== "CBvS Register"
+  );
+  const marketRates = directLiveSources.length ? directLiveSources : marketPayload.rates;
+  const usdSellValues = marketRates
+    .map((item) => item?.rates?.USD?.sell)
+    .filter((value) => Number.isFinite(value));
+
+  if (!usdSellValues.length) {
+    throw new Error("No Suriname USD sell rates available for gold conversion");
+  }
+
+  const usdSrdSell = Number(average(usdSellValues).toFixed(3));
+  const priceSrd = Number((goldUsdPayload.priceUsd * usdSrdSell).toFixed(2));
+
+  const payload = {
+    ...goldUsdPayload,
+    priceSrd,
+    usdSrdSell,
+    conversion: "Suriname cambio average USD sell",
+    conversionUpdatedAt: marketPayload.generatedAt,
+  };
+
   goldCache = { ts: now, payload };
   return payload;
 }
