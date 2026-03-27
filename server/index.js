@@ -144,7 +144,7 @@ app.get("/api/health", (_req, res) => {
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(DIST_DIR));
-  app.get("*", (req, res, next) => {
+  app.get("/{*splat}", (req, res, next) => {
     if (req.path.startsWith("/api/")) {
       next();
       return;
