@@ -4,7 +4,7 @@ import cors from "cors";
 import express from "express";
 import { fetchCbvsOfficial } from "./sources/cbvs.js";
 import { appendCbvsRegisterEntries } from "./sources/cbvsRegister.js";
-import { fetchCme } from "./sources/cme.js";
+import { createCmeFallbackRate, fetchCme } from "./sources/cme.js";
 import { fetchDsb } from "./sources/dsb.js";
 import { fetchGoldSpot } from "./sources/gold.js";
 import { fetchHakrin } from "./sources/hakrin.js";
@@ -19,13 +19,15 @@ app.use(cors());
 app.use(express.json());
 
 const CACHE_TTL_MS = 3_600_000;
+const TROY_OUNCE_IN_GRAMS = 31.1034768;
 let liveCache = { ts: 0, payload: null };
 let officialCache = { ts: 0, payload: null };
 let goldCache = { ts: 0, payload: null };
+const sourceSnapshotCache = new Map();
 
 async function fetchLiveMarketWithResilience() {
   const tasks = [
-    { key: "cme", fn: fetchCme },
+    { key: "cme", fn: fetchCme, fallback: createCmeFallbackRate },
     { key: "dsb", fn: fetchDsb },
     { key: "hakrinbank", fn: fetchHakrin },
   ];
@@ -38,10 +40,22 @@ async function fetchLiveMarketWithResilience() {
     const task = tasks[index];
     if (result.status === "fulfilled") {
       rates.push(result.value);
+      sourceSnapshotCache.set(task.key, result.value);
     } else {
+      const cached = sourceSnapshotCache.get(task.key);
+      if (cached) {
+        rates.push(cached);
+      } else if (typeof task.fallback === "function") {
+        const fallbackRate = task.fallback();
+        rates.push(fallbackRate);
+        sourceSnapshotCache.set(task.key, fallbackRate);
+      }
+
       errors.push({
         source: task.key,
-        message: result.reason?.message || "Unknown fetch error",
+        message:
+          result.reason?.message ||
+          `Unknown fetch error${cached ? " (using cached snapshot)" : ""}`,
       });
     }
   });
@@ -133,11 +147,16 @@ async function getGoldSpot() {
   }
 
   const usdSrdSell = Number(average(usdSellValues).toFixed(3));
-  const priceSrd = Number((goldUsdPayload.priceUsd * usdSrdSell).toFixed(2));
+  const priceSrdPerTroyOunce = Number((goldUsdPayload.priceUsd * usdSrdSell).toFixed(2));
+  const priceSrdPerGram = Number((priceSrdPerTroyOunce / TROY_OUNCE_IN_GRAMS).toFixed(2));
+  const priceUsdPerGram = Number((goldUsdPayload.priceUsd / TROY_OUNCE_IN_GRAMS).toFixed(2));
 
   const payload = {
     ...goldUsdPayload,
-    priceSrd,
+    priceSrd: priceSrdPerTroyOunce,
+    priceSrdPerTroyOunce,
+    priceSrdPerGram,
+    priceUsdPerGram,
     usdSrdSell,
     conversion: "Suriname cambio average USD sell",
     conversionUpdatedAt: marketPayload.generatedAt,

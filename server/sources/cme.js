@@ -10,6 +10,43 @@ function parseCmeUpdatedAt(record) {
   return new Date(parsed).toISOString();
 }
 
+function createCmeRate({ usdBuy, usdSell, eurBuy, eurSell, updatedAt }) {
+  return {
+    id: "cme",
+    name: "Central Money Exchange (CME)",
+    district: "Paramaribo",
+    locationLabel: "Saramaccastraat 2, Paramaribo",
+    mapsQuery: "Saramaccastraat 2 Paramaribo Suriname",
+    whatsappNumber: "597426680",
+    coordinates: { lat: 5.8269, lng: -55.1661 },
+    businessHours: {
+      mon: "08:00-17:00",
+      tue: "08:00-17:00",
+      wed: "08:00-17:00",
+      thu: "08:00-17:00",
+      fri: "08:00-17:00",
+      sat: "08:00-13:00",
+      sun: "closed",
+    },
+    updatedAt,
+    sourceUrl: "https://www.cme.sr/",
+    rates: {
+      USD: { buy: usdBuy, sell: usdSell },
+      EUR: { buy: eurBuy, sell: eurSell },
+    },
+  };
+}
+
+export function createCmeFallbackRate() {
+  return createCmeRate({
+    usdBuy: 37.55,
+    usdSell: 37.75,
+    eurBuy: 42.5,
+    eurSell: 43.45,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
 export async function fetchCme() {
   const response = await fetch(CME_ENDPOINT, { method: "POST" });
   if (!response.ok) {
@@ -30,28 +67,11 @@ export async function fetchCme() {
     throw new Error("CME rates invalid");
   }
 
-  return {
-    id: "cme",
-    name: "Central Money Exchange (CME)",
-    district: "Paramaribo",
-    locationLabel: "Saramaccastraat 2, Paramaribo",
-    mapsQuery: "Saramaccastraat 2 Paramaribo Suriname",
-    whatsappNumber: "597426680",
-    coordinates: { lat: 5.8269, lng: -55.1661 },
-    businessHours: {
-      mon: "08:00-17:00",
-      tue: "08:00-17:00",
-      wed: "08:00-17:00",
-      thu: "08:00-17:00",
-      fri: "08:00-17:00",
-      sat: "08:00-13:00",
-      sun: "closed",
-    },
+  return createCmeRate({
+    usdBuy,
+    usdSell,
+    eurBuy,
+    eurSell,
     updatedAt: parseCmeUpdatedAt(row),
-    sourceUrl: "https://www.cme.sr/",
-    rates: {
-      USD: { buy: usdBuy, sell: usdSell },
-      EUR: { buy: eurBuy, sell: eurSell },
-    },
-  };
+  });
 }

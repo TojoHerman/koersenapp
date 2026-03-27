@@ -462,8 +462,9 @@ export async function fetchGoldSpotRate() {
 
   const payload = await response.json();
   const priceUsd = Number(payload?.priceUsd);
-  const priceSrd = Number(payload?.priceSrd);
-  if (!Number.isFinite(priceUsd) || !Number.isFinite(priceSrd)) {
+  const priceSrdPerGram = Number(payload?.priceSrdPerGram);
+  const priceSrdPerTroyOunce = Number(payload?.priceSrdPerTroyOunce ?? payload?.priceSrd);
+  if (!Number.isFinite(priceUsd) || !Number.isFinite(priceSrdPerGram)) {
     throw new Error("Gold spot payload invalid");
   }
 
@@ -471,7 +472,8 @@ export async function fetchGoldSpotRate() {
     symbol: payload.symbol || "XAUUSD",
     name: payload.name || "Gold",
     priceUsd,
-    priceSrd,
+    priceSrdPerGram,
+    priceSrdPerTroyOunce: Number.isFinite(priceSrdPerTroyOunce) ? priceSrdPerTroyOunce : null,
     usdSrdSell: Number(payload?.usdSrdSell),
     updatedAt: payload.updatedAt || new Date().toISOString(),
     source: payload.source || "Unknown",

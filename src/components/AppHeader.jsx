@@ -9,7 +9,12 @@ export default function AppHeader({
   lastSyncLabel,
   goldSpot,
 }) {
-  const goldSrdValue = goldSpot && Number.isFinite(goldSpot.priceSrd) ? formatSrd(goldSpot.priceSrd) : null;
+  const goldSrdPerGramValue =
+    goldSpot && Number.isFinite(goldSpot.priceSrdPerGram) ? formatSrd(goldSpot.priceSrdPerGram) : null;
+  const goldSrdPerOunceValue =
+    goldSpot && Number.isFinite(goldSpot.priceSrdPerTroyOunce)
+      ? formatSrd(goldSpot.priceSrdPerTroyOunce)
+      : null;
   const goldUpdateLabel = goldSpot?.updatedAt ? new Date(goldSpot.updatedAt).toLocaleTimeString() : null;
 
   return (
@@ -49,8 +54,9 @@ export default function AppHeader({
           Last platform sync: {lastSyncLabel}
         </div>
         <div className="rounded-xl border border-amber-300/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-100">
-          <p className="font-semibold">Gold (XAU/SRD)</p>
-          <p className="mt-1 text-sm font-medium text-amber-50">{goldSrdValue || "Rate unavailable"}</p>
+          <p className="font-semibold">Gold (SRD per gram)</p>
+          <p className="mt-1 text-sm font-medium text-amber-50">{goldSrdPerGramValue || "Rate unavailable"}</p>
+          {goldSrdPerOunceValue && <p className="mt-1 text-[11px] text-amber-100/85">Per troy ounce: {goldSrdPerOunceValue}</p>}
           <p className="mt-1 text-[11px] text-amber-100/80">
             {goldSpot
               ? `Source: ${goldSpot.source} | ${goldSpot.conversion}${goldUpdateLabel ? ` | ${goldUpdateLabel}` : ""}`
@@ -61,4 +67,3 @@ export default function AppHeader({
     </header>
   );
 }
-
