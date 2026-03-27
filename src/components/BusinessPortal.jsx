@@ -1,5 +1,5 @@
 import { BriefcaseBusiness, LockKeyhole, LogOut } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 const SESSION_KEY = "koersen_business_portal_auth";
 
@@ -16,13 +16,17 @@ export default function BusinessPortal({ rates, onOwnerUpdateRate }) {
   const [sell, setSell] = useState("");
   const [status, setStatus] = useState("");
 
-  const allowedUser = useMemo(() => import.meta.env.VITE_PORTAL_USER || "owner", []);
-  const allowedPassword = useMemo(() => import.meta.env.VITE_PORTAL_PASS || "owner123", []);
+  const allowedUser = import.meta.env.VITE_PORTAL_USER;
+  const allowedPassword = import.meta.env.VITE_PORTAL_PASS;
+  const isPortalConfigured = Boolean(allowedUser && allowedPassword);
 
   useEffect(() => {
-    const hasSession = sessionStorage.getItem(SESSION_KEY) === "1";
+    const hasSession = isPortalConfigured && sessionStorage.getItem(SESSION_KEY) === "1";
     setIsAuthenticated(hasSession);
-  }, []);
+    if (!isPortalConfigured) {
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+  }, [isPortalConfigured]);
 
   useEffect(() => {
     const exists = rates.some((rate) => rate.id === selectedId);
@@ -36,6 +40,10 @@ export default function BusinessPortal({ rates, onOwnerUpdateRate }) {
 
   const handleLogin = (event) => {
     event.preventDefault();
+    if (!isPortalConfigured) {
+      setLoginError("Portal login is niet geconfigureerd. Voeg VITE_PORTAL_USER en VITE_PORTAL_PASS toe.");
+      return;
+    }
     if (loginName === allowedUser && loginPassword === allowedPassword) {
       setIsAuthenticated(true);
       sessionStorage.setItem(SESSION_KEY, "1");
@@ -93,6 +101,11 @@ export default function BusinessPortal({ rates, onOwnerUpdateRate }) {
 
       {!isAuthenticated ? (
         <>
+          {!isPortalConfigured && (
+            <p className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/15 px-3 py-2 text-xs text-amber-100">
+              Portal login is niet geconfigureerd op deze omgeving.
+            </p>
+          )}
           <form onSubmit={handleLogin} className="space-y-2">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <input
@@ -111,7 +124,8 @@ export default function BusinessPortal({ rates, onOwnerUpdateRate }) {
             </div>
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emeraldRate-600 py-2 text-sm font-medium text-white"
+              disabled={!isPortalConfigured}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emeraldRate-600 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LockKeyhole size={14} />
               Login Cambio Owner Portal

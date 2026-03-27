@@ -52,7 +52,7 @@ Last updated: March 26, 2026
 - Business portal auth env vars:
   - `VITE_PORTAL_USER`
   - `VITE_PORTAL_PASS`
-  - fallback credentials: `owner` / `owner123`
+  - no fallback credentials (portal login is disabled when env vars are missing)
 
 ## 5) Security/trust logic now in place
 - Crowdsource checks:

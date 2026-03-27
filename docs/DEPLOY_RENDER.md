@@ -20,12 +20,13 @@ Render will run:
 - Build: `npm install && npm run build`
 - Start: `npm run start`
 
-## 4) Environment variables to set (optional but recommended)
+## 4) Environment variables to set
 - `VITE_PORTAL_USER` (for Cambio Owner Portal login user)
 - `VITE_PORTAL_PASS` (for Cambio Owner Portal login password)
 
 Important:
 - These `VITE_*` vars must be set in Render **before a new build** to affect frontend bundle.
+- If they are not set, Cambio Owner Portal login stays disabled.
 
 ## 5) Health and smoke checks after deploy
 - Health: `https://<your-render-url>/api/health`
