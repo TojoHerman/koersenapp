@@ -6,6 +6,7 @@ import { fetchCbvsOfficial } from "./sources/cbvs.js";
 import { appendCbvsRegisterEntries } from "./sources/cbvsRegister.js";
 import { fetchCme } from "./sources/cme.js";
 import { fetchDsb } from "./sources/dsb.js";
+import { fetchGoldSpot } from "./sources/gold.js";
 import { fetchHakrin } from "./sources/hakrin.js";
 import { average, isoNow } from "./utils.js";
 
@@ -20,6 +21,7 @@ app.use(express.json());
 const CACHE_TTL_MS = 3_600_000;
 let liveCache = { ts: 0, payload: null };
 let officialCache = { ts: 0, payload: null };
+let goldCache = { ts: 0, payload: null };
 
 async function fetchLiveMarketWithResilience() {
   const tasks = [
@@ -111,6 +113,17 @@ async function getOfficialVsParallel() {
   return payload;
 }
 
+async function getGoldSpot() {
+  const now = Date.now();
+  if (goldCache.payload && now - goldCache.ts < CACHE_TTL_MS) {
+    return goldCache.payload;
+  }
+
+  const payload = await fetchGoldSpot();
+  goldCache = { ts: now, payload };
+  return payload;
+}
+
 app.get("/api/rates/live", async (_req, res) => {
   try {
     const payload = await getLiveMarket();
@@ -131,6 +144,18 @@ app.get("/api/rates/official-vs-parallel", async (_req, res) => {
     res.status(502).json({
       error: "OFFICIAL_PARALLEL_UNAVAILABLE",
       message: error?.message || "Failed to fetch official vs parallel snapshot",
+    });
+  }
+});
+
+app.get("/api/rates/gold", async (_req, res) => {
+  try {
+    const payload = await getGoldSpot();
+    res.status(200).json(payload);
+  } catch (error) {
+    res.status(502).json({
+      error: "GOLD_RATE_UNAVAILABLE",
+      message: error?.message || "Failed to fetch gold rate",
     });
   }
 });

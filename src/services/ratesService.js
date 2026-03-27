@@ -2,6 +2,7 @@ import { DEFAULT_BUSINESS_HOURS } from "../utils/marketState";
 
 const LIVE_RATES_ENDPOINT = "/api/rates/live";
 const OFFICIAL_PARALLEL_ENDPOINT = "/api/rates/official-vs-parallel";
+const GOLD_SPOT_ENDPOINT = "/api/rates/gold";
 const CBVS_REGISTER_SOURCE = "CBvS Register";
 const CUSTOM_OVERRIDE_SOURCES = new Set([
   "Admin Added",
@@ -438,6 +439,27 @@ export async function fetchOfficialVsParallelSnapshot(marketRates) {
       },
     };
   }
+}
+
+export async function fetchGoldSpotRate() {
+  const response = await fetch(GOLD_SPOT_ENDPOINT);
+  if (!response.ok) {
+    throw new Error(`Gold spot request failed (${response.status})`);
+  }
+
+  const payload = await response.json();
+  const priceUsd = Number(payload?.priceUsd);
+  if (!Number.isFinite(priceUsd)) {
+    throw new Error("Gold spot payload invalid");
+  }
+
+  return {
+    symbol: payload.symbol || "XAUUSD",
+    name: payload.name || "Gold",
+    priceUsd,
+    updatedAt: payload.updatedAt || new Date().toISOString(),
+    source: payload.source || "Unknown",
+  };
 }
 
 export function buildTimelineFromNow(days = 7) {

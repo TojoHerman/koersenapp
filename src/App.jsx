@@ -14,6 +14,7 @@ import TrendingSection from "./components/TrendingSection";
 import { hasNumericRate } from "./utils/formatters";
 import { isCambioOpenNow, isRateStale, STALE_THRESHOLD_MS } from "./utils/marketState";
 import {
+  fetchGoldSpotRate,
   fetchInitialMarketRates,
   fetchOfficialVsParallelSnapshot,
   refreshMarketRates,
@@ -93,6 +94,7 @@ export default function App() {
   const [compareModalOpen, setCompareModalOpen] = useState(false);
   const [showOfficialVsParallel, setShowOfficialVsParallel] = useState(false);
   const [officialSnapshot, setOfficialSnapshot] = useState(null);
+  const [goldSpot, setGoldSpot] = useState(null);
   const [amount, setAmount] = useState("100");
   const [reports, setReports] = useState([]);
   const [geoStatus, setGeoStatus] = useState("idle");
@@ -137,8 +139,14 @@ export default function App() {
     try {
       setLoading(true);
       setError("");
-      const marketRates = await refreshMarketRates(ratesRef.current);
+      const [marketRates, latestGoldSpot] = await Promise.all([
+        refreshMarketRates(ratesRef.current),
+        fetchGoldSpotRate().catch(() => null),
+      ]);
       setRates(marketRates);
+      if (latestGoldSpot) {
+        setGoldSpot(latestGoldSpot);
+      }
       setLastSyncedAt(new Date());
       ratesRef.current = marketRates;
 
@@ -161,8 +169,12 @@ export default function App() {
         setLoading(true);
         setError("");
         const initialRates = await fetchInitialMarketRates();
+        const initialGoldSpot = await fetchGoldSpotRate().catch(() => null);
         if (!active) return;
         setRates(initialRates);
+        if (initialGoldSpot) {
+          setGoldSpot(initialGoldSpot);
+        }
         ratesRef.current = initialRates;
         setLastSyncedAt(new Date());
       } catch (fetchError) {
@@ -557,6 +569,7 @@ export default function App() {
           onRefresh={refreshRates}
           isRefreshing={loading}
           lastSyncLabel={lastSyncedAt.toLocaleTimeString()}
+          goldSpot={goldSpot}
         />
 
         <FilterBar

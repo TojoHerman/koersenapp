@@ -6,7 +6,20 @@ export default function AppHeader({
   onRefresh,
   isRefreshing,
   lastSyncLabel,
+  goldSpot,
 }) {
+  const goldValue =
+    goldSpot && Number.isFinite(goldSpot.priceUsd)
+      ? new Intl.NumberFormat("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(goldSpot.priceUsd)
+      : null;
+
+  const goldUpdateLabel = goldSpot?.updatedAt
+    ? new Date(goldSpot.updatedAt).toLocaleTimeString()
+    : null;
+
   return (
     <header className="glass-panel rounded-3xl p-4 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -39,8 +52,19 @@ export default function AppHeader({
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl bg-slate-950/25 px-4 py-2 text-xs text-slate-200/80">
-        Last platform sync: {lastSyncLabel}
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="rounded-xl bg-slate-950/25 px-4 py-2 text-xs text-slate-200/80">
+          Last platform sync: {lastSyncLabel}
+        </div>
+        <div className="rounded-xl border border-amber-300/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-100">
+          <p className="font-semibold">Gold (XAU/USD)</p>
+          <p className="mt-1 text-sm font-medium text-amber-50">
+            {goldValue ? `$${goldValue}` : "Rate unavailable"}
+          </p>
+          <p className="mt-1 text-[11px] text-amber-100/80">
+            {goldSpot ? `Source: ${goldSpot.source}${goldUpdateLabel ? ` · ${goldUpdateLabel}` : ""}` : "Live feed"}
+          </p>
+        </div>
       </div>
     </header>
   );
