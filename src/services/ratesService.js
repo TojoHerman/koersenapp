@@ -87,20 +87,6 @@ const fallbackRegisterCambios = [
   },
 ];
 
-function randomDelta(max = 0.08) {
-  return Math.random() * max - max / 2;
-}
-
-function seedHistory(mid) {
-  const points = [];
-  let cursor = mid;
-  for (let i = 0; i < 7; i += 1) {
-    cursor = Number((cursor + randomDelta()).toFixed(3));
-    points.push(cursor);
-  }
-  return points;
-}
-
 function toNumber(value, fallback = 0) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -141,7 +127,7 @@ function resolveCurrencyRate({
   if (preservePrevious) {
     history = previousCurrency.history || [];
   } else if (mid !== null) {
-    history = previousCurrency ? [...(previousCurrency.history || []).slice(-6), mid] : seedHistory(mid);
+    history = [...(previousCurrency?.history || []).slice(-6), mid];
   } else {
     history = previousCurrency?.history || [];
   }
@@ -222,7 +208,7 @@ function buildFallbackRates() {
           sell: 37.75,
           previousBuy: 37.55,
           previousSell: 37.75,
-          history: seedHistory(37.65),
+          history: [],
           source: "Official Site",
           trustScore: 100,
           lastSourceUpdate: now,
@@ -232,7 +218,7 @@ function buildFallbackRates() {
           sell: 43.45,
           previousBuy: 42.5,
           previousSell: 43.45,
-          history: seedHistory(42.98),
+          history: [],
           source: "Official Site",
           trustScore: 100,
           lastSourceUpdate: now,
@@ -353,7 +339,7 @@ export function createCambioEntry({
         sell: usdSell,
         previousBuy: usdBuy,
         previousSell: usdSell,
-        history: seedHistory(usdMid),
+        history: [usdMid],
         source: "Admin Added",
         trustScore: 100,
         lastSourceUpdate: now,
@@ -363,7 +349,7 @@ export function createCambioEntry({
         sell: eurSell,
         previousBuy: eurBuy,
         previousSell: eurSell,
-        history: seedHistory(eurMid),
+        history: [eurMid],
         source: "Admin Added",
         trustScore: 100,
         lastSourceUpdate: now,

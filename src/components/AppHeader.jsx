@@ -21,8 +21,8 @@ export default function AppHeader({
     <header className="glass-panel rounded-3xl p-4 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-emeraldRate-500">Koersen Suriname</p>
-          <h1 className="text-2xl font-semibold sm:text-3xl">Real-Time Cambio Rates</h1>
+          <p className="text-xs uppercase tracking-[0.2em] text-white">Koersen Suriname</p>
+          <h1 className="text-2xl font-semibold text-sky-200 sm:text-3xl">Real-Time Cambio Rates</h1>
           <p className="mt-1 text-sm text-slate-200/80">
             Compare USD/EUR rates across market cambios and CBvS official benchmarks.
           </p>
