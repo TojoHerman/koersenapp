@@ -1,50 +1,14 @@
 import { useEffect, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, ExternalLink, Minus } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { formatSrd, hasNumericRate, relativeTime } from "../utils/formatters";
 import { isCambioOpenNow, isRateStale } from "../utils/marketState";
 import MiniRateChart from "./MiniRateChart";
 
-function TrendPill({ buyRate, sellRate, previousBuyRate, previousSellRate }) {
-  const hasCurrent = hasNumericRate(buyRate) && hasNumericRate(sellRate);
-  const hasPrevious = hasNumericRate(previousBuyRate) && hasNumericRate(previousSellRate);
-  if (!hasCurrent || !hasPrevious) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-slate-400/20 px-2 py-1 text-xs font-medium text-slate-100">
-        <Minus size={14} />
-        Geen data
-      </span>
-    );
-  }
-
-  const delta = (buyRate - previousBuyRate + (sellRate - previousSellRate)) / 2;
-  if (delta > 0) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-1 text-xs font-medium text-emerald-200">
-        <ArrowUpRight size={14} />
-        Up
-      </span>
-    );
-  }
-  if (delta < 0) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2 py-1 text-xs font-medium text-rose-200">
-        <ArrowDownRight size={14} />
-        Down
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-400/20 px-2 py-1 text-xs font-medium text-slate-100">
-      <Minus size={14} />
-      Flat
-    </span>
-  );
-}
-
-function LoadingRows() {
+function LoadingRows({ compareMode }) {
+  const columnCount = compareMode ? 12 : 11;
   return Array.from({ length: 6 }).map((_, index) => (
     <tr key={`skeleton-${index}`} className="border-b border-slate-200/10">
-      {Array.from({ length: 12 }).map((__, colIdx) => (
+      {Array.from({ length: columnCount }).map((__, colIdx) => (
         <td key={colIdx} className="px-3 py-4">
           <div className="h-4 w-full animate-pulse-soft rounded bg-slate-300/20" />
         </td>
@@ -55,36 +19,52 @@ function LoadingRows() {
 
 function SourceBadge({ source, trustScore = 0 }) {
   if (source === "Official Site") {
-    return <span className="rounded-full bg-sky-500/20 px-2 py-1 text-xs text-sky-100">Official Site</span>;
+    return (
+      <span className="rounded-full border border-sky-400/40 bg-sky-500/25 px-2 py-1 text-xs font-medium text-sky-100">
+        Official Site
+      </span>
+    );
   }
   if (source === "Community Verified") {
     return (
-      <span className="rounded-full bg-emerald-500/25 px-2 py-1 text-xs text-emerald-100">
+      <span className="rounded-full border border-emerald-400/45 bg-emerald-500/25 px-2 py-1 text-xs font-medium text-emerald-100">
         Community Verified ({trustScore}%)
       </span>
     );
   }
   if (source === "User Reported") {
     return (
-      <span className="rounded-full bg-amber-500/25 px-2 py-1 text-xs text-amber-100">
+      <span className="rounded-full border border-amber-300/45 bg-amber-500/25 px-2 py-1 text-xs font-medium text-amber-100">
         User Reported ({trustScore}%)
       </span>
     );
   }
   if (source === "Business Portal" || source === "Cambio Owner Portal") {
     return (
-      <span className="rounded-full bg-indigo-500/20 px-2 py-1 text-xs text-indigo-100">
+      <span className="rounded-full border border-violet-400/45 bg-violet-500/25 px-2 py-1 text-xs font-medium text-violet-100">
         Cambio Owner Portal
       </span>
     );
   }
   if (source === "CBvS Register") {
-    return <span className="rounded-full bg-cyan-500/20 px-2 py-1 text-xs text-cyan-100">CBvS Register</span>;
+    return (
+      <span className="rounded-full border border-cyan-400/45 bg-cyan-500/20 px-2 py-1 text-xs font-medium text-cyan-100">
+        CBvS Register
+      </span>
+    );
   }
   if (source === "Admin Updated" || source === "Admin Added") {
-    return <span className="rounded-full bg-slate-400/20 px-2 py-1 text-xs text-slate-100">{source}</span>;
+    return (
+      <span className="rounded-full border border-fuchsia-400/45 bg-fuchsia-500/20 px-2 py-1 text-xs font-medium text-fuchsia-100">
+        {source}
+      </span>
+    );
   }
-  return <span className="rounded-full bg-slate-400/20 px-2 py-1 text-xs text-slate-100">{source}</span>;
+  return (
+    <span className="rounded-full border border-slate-300/35 bg-slate-400/20 px-2 py-1 text-xs font-medium text-slate-100">
+      {source}
+    </span>
+  );
 }
 
 export default function RatesTable({
@@ -127,7 +107,6 @@ export default function RatesTable({
               <th className="px-3 py-2">Open</th>
               <th className="px-3 py-2">{selectedCurrency} Buy</th>
               <th className="px-3 py-2">{selectedCurrency} Sell</th>
-              <th className="px-3 py-2">Trend</th>
               <th className="px-3 py-2">7D</th>
               <th className="px-3 py-2">Source</th>
               <th className="px-3 py-2">Last Updated</th>
@@ -136,7 +115,7 @@ export default function RatesTable({
           </thead>
           <tbody>
             {loading ? (
-              <LoadingRows />
+              <LoadingRows compareMode={compareMode} />
             ) : (
               rates.map((rate) => {
                 const isBestBuy = rate.id === bestBuyId;
@@ -190,14 +169,6 @@ export default function RatesTable({
                           </span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <TrendPill
-                        buyRate={active.buy}
-                        sellRate={active.sell}
-                        previousBuyRate={active.previousBuy}
-                        previousSellRate={active.previousSell}
-                      />
                     </td>
                     <td className="px-3 py-3">
                       <MiniRateChart points={active.history} />
