@@ -14,6 +14,7 @@ export default function TrendingSection({ items }) {
         district: item.district ?? "Onbekend district",
         viewsToday: Number.isFinite(Number(item.viewsToday)) ? Number(item.viewsToday) : 0,
       }))
+      .filter((item) => item.viewsToday > 0)
       .sort((a, b) => b.viewsToday - a.viewsToday)
       .slice(0, 5);
   }, [items]);

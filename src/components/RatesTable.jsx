@@ -96,6 +96,7 @@ export default function RatesTable({
   compareMode,
   selectedCompareIds,
   onToggleCompareSelect,
+  onTrackView,
   staleThresholdMs,
 }) {
   const [, setTicker] = useState(0);
@@ -217,7 +218,10 @@ export default function RatesTable({
                     <td className="px-3 py-3">
                       <button
                         type="button"
-                        onClick={() => window.open(mapUrl, "_blank", "noopener,noreferrer")}
+                        onClick={() => {
+                          onTrackView?.(rate.id);
+                          window.open(mapUrl, "_blank", "noopener,noreferrer");
+                        }}
                         className="inline-flex items-center gap-1 rounded-lg border border-slate-200/20 px-2 py-1 text-xs text-slate-100 transition hover:bg-white/15"
                       >
                         Map View

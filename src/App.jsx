@@ -8,7 +8,6 @@ import CrowdsourcePanel from "./components/CrowdsourcePanel";
 import FilterBar from "./components/FilterBar";
 import NearbyBestRateCard from "./components/NearbyBestRateCard";
 import OfficialParallelPanel from "./components/OfficialParallelPanel";
-import RateAlertCard from "./components/RateAlertCard";
 import RatesTable from "./components/RatesTable";
 import TrendingSection from "./components/TrendingSection";
 import { hasNumericRate } from "./utils/formatters";
@@ -21,7 +20,6 @@ import {
 } from "./services/ratesService";
 
 const REFRESH_INTERVAL_MS = 3_600_000;
-const RATE_ALERT_STORAGE_KEY = "koersen_rate_alert";
 
 function toNumber(value) {
   return Number(Number(value).toFixed(2));
@@ -99,14 +97,6 @@ export default function App() {
   const [reports, setReports] = useState([]);
   const [geoStatus, setGeoStatus] = useState("idle");
   const [geoMessage, setGeoMessage] = useState("");
-  const [rateAlertConfig, setRateAlertConfig] = useState({
-    enabled: false,
-    currency: "USD",
-    side: "buy",
-    target: "",
-  });
-  const [rateAlertStatus, setRateAlertStatus] = useState("Alert staat uit.");
-  const alertTriggeredRef = useRef(false);
 
   useEffect(() => {
     document.body.classList.toggle("light-theme", !isDarkMode);
@@ -115,25 +105,6 @@ export default function App() {
   useEffect(() => {
     ratesRef.current = rates;
   }, [rates]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem(RATE_ALERT_STORAGE_KEY);
-    if (!saved) return;
-    try {
-      const parsed = JSON.parse(saved);
-      if (!parsed || typeof parsed !== "object") return;
-      setRateAlertConfig((current) => ({
-        ...current,
-        ...parsed,
-      }));
-    } catch {
-      // Ignore invalid storage payloads.
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(RATE_ALERT_STORAGE_KEY, JSON.stringify(rateAlertConfig));
-  }, [rateAlertConfig]);
 
   const refreshRates = useCallback(async () => {
     try {
@@ -278,90 +249,6 @@ export default function App() {
     [rates]
   );
 
-  const alertCandidate = useMemo(() => {
-    const alertCurrency = rateAlertConfig.currency;
-    const eligible = rates.filter(
-      (rate) =>
-        hasQuoteForCurrency(rate, alertCurrency) && !isRateStale(rate.updatedAt, STALE_THRESHOLD_MS)
-    );
-
-    if (!eligible.length) return null;
-
-    if (rateAlertConfig.side === "sell") {
-      const bestSell = eligible.reduce((best, current) =>
-        current.rates[alertCurrency].sell > best.rates[alertCurrency].sell ? current : best
-      );
-      return {
-        name: bestSell.name,
-        rate: bestSell.rates[alertCurrency].sell,
-      };
-    }
-
-    const bestBuy = eligible.reduce((best, current) =>
-      current.rates[alertCurrency].buy < best.rates[alertCurrency].buy ? current : best
-    );
-    return {
-      name: bestBuy.name,
-      rate: bestBuy.rates[alertCurrency].buy,
-    };
-  }, [rates, rateAlertConfig.currency, rateAlertConfig.side]);
-
-  useEffect(() => {
-    if (!rateAlertConfig.enabled) {
-      alertTriggeredRef.current = false;
-      setRateAlertStatus("Alert staat uit.");
-      return;
-    }
-
-    const target = Number(rateAlertConfig.target);
-    if (!Number.isFinite(target) || target <= 0) {
-      alertTriggeredRef.current = false;
-      setRateAlertStatus("Stel een geldige target-koers in.");
-      return;
-    }
-
-    if (!alertCandidate) {
-      alertTriggeredRef.current = false;
-      setRateAlertStatus(`Geen verse ${rateAlertConfig.currency}-koersen beschikbaar voor alert.`);
-      return;
-    }
-
-    const meets =
-      rateAlertConfig.side === "buy" ? alertCandidate.rate <= target : alertCandidate.rate >= target;
-
-    if (!meets) {
-      alertTriggeredRef.current = false;
-      setRateAlertStatus(
-        `Wacht op target. Beste ${rateAlertConfig.currency} ${rateAlertConfig.side}: ${alertCandidate.rate.toFixed(2)} SRD.`
-      );
-      return;
-    }
-
-    setRateAlertStatus(
-      `Target geraakt: ${rateAlertConfig.currency} ${rateAlertConfig.side} ${alertCandidate.rate.toFixed(
-        2
-      )} SRD bij ${alertCandidate.name}.`
-    );
-
-    if (alertTriggeredRef.current) return;
-    alertTriggeredRef.current = true;
-
-    if ("Notification" in window) {
-      const notificationBody = `${rateAlertConfig.currency} ${rateAlertConfig.side} target gehaald bij ${alertCandidate.name}: ${alertCandidate.rate.toFixed(
-        2
-      )} SRD.`;
-      const fireNotification = () => new Notification("Koersen Target Alert", { body: notificationBody });
-
-      if (Notification.permission === "granted") {
-        fireNotification();
-      } else if (Notification.permission === "default") {
-        Notification.requestPermission().then((permission) => {
-          if (permission === "granted") fireNotification();
-        });
-      }
-    }
-  }, [rateAlertConfig, alertCandidate]);
-
   const compareItems = useMemo(() => {
     return rates
       .filter((item) => selectedCompareIds.includes(item.id))
@@ -393,6 +280,20 @@ export default function App() {
   const handleToggleOfficialVsParallel = () => {
     setShowOfficialVsParallel((prev) => !prev);
   };
+
+  const handleTrackView = useCallback((cambioId) => {
+    if (!cambioId) return;
+    setRates((current) =>
+      current.map((item) =>
+        item.id === cambioId
+          ? {
+              ...item,
+              viewsToday: Number.isFinite(Number(item.viewsToday)) ? Number(item.viewsToday) + 1 : 1,
+            }
+          : item
+      )
+    );
+  }, []);
 
   const handleReportRate = (payload) => {
     const normalizedBuy = toNumber(payload.buy);
@@ -674,23 +575,18 @@ export default function App() {
             compareMode={compareMode}
             selectedCompareIds={selectedCompareIds}
             onToggleCompareSelect={handleToggleCompareSelect}
+            onTrackView={handleTrackView}
             staleThresholdMs={STALE_THRESHOLD_MS}
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <ConverterCard
             amount={amount}
             onAmountChange={setAmount}
             selectedCurrency={selectedCurrency}
             bestBuyRate={bestBuyExchangeForConverter?.rates?.[selectedCurrency]?.buy ?? null}
             bestBuyExchangeName={bestBuyExchangeForConverter?.name || "Geen koers beschikbaar"}
-          />
-          <RateAlertCard
-            config={rateAlertConfig}
-            onChange={setRateAlertConfig}
-            bestQuote={alertCandidate}
-            statusMessage={rateAlertStatus}
           />
           <TrendingSection items={topViewed} />
           <NearbyBestRateCard

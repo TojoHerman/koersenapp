@@ -199,7 +199,7 @@ function mapLiveItemToInternal(liveItem, previousItem) {
       USD: normalizedUsd,
       EUR: normalizedEur,
     },
-    viewsToday: Math.max(0, (previousItem?.viewsToday ?? 140) + Math.floor(Math.random() * 6)),
+    viewsToday: Math.max(0, Number(previousItem?.viewsToday) || 0),
     updatedAt,
   };
 }
@@ -238,7 +238,7 @@ function buildFallbackRates() {
           lastSourceUpdate: now,
         },
       },
-      viewsToday: 210,
+      viewsToday: 0,
       updatedAt: now,
     },
   ];
@@ -275,7 +275,7 @@ function buildFallbackRates() {
           lastSourceUpdate: now,
         },
       },
-      viewsToday: 120 + index,
+      viewsToday: 0,
       updatedAt: now,
     };
   });
