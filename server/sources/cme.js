@@ -1,6 +1,31 @@
 import { toNumber } from "../utils.js";
 
 const CME_ENDPOINT = "https://www.cme.sr/Home/GetTodaysExchangeRates/?BusinessDate=2016-07-25";
+const CME_HOME = "https://www.cme.sr/";
+
+function buildCmeHeaders(cookie = "") {
+  const headers = {
+    accept: "application/json, text/javascript, */*; q=0.01",
+    "accept-language": "en-US,en;q=0.9",
+    origin: CME_HOME.replace(/\/$/, ""),
+    referer: CME_HOME,
+    "user-agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36",
+    "x-requested-with": "XMLHttpRequest",
+  };
+
+  if (cookie) {
+    headers.cookie = cookie;
+  }
+
+  return headers;
+}
+
+function extractCookieHeader(response) {
+  const setCookies = response.headers.getSetCookie?.() || [];
+  if (!setCookies.length) return "";
+  return setCookies.map((cookieLine) => cookieLine.split(";")[0]).join("; ");
+}
 
 function parseCmeUpdatedAt(record) {
   const datePart = record?.BusinessDate ? String(record.BusinessDate).trim() : "";
@@ -48,7 +73,21 @@ export function createCmeFallbackRate() {
 }
 
 export async function fetchCme() {
-  const response = await fetch(CME_ENDPOINT, { method: "POST" });
+  let response = await fetch(CME_ENDPOINT, {
+    method: "POST",
+    headers: buildCmeHeaders(),
+  });
+
+  // Render datacenter traffic can be blocked unless we first establish a session cookie.
+  if (response.status === 403) {
+    const homeResponse = await fetch(CME_HOME, { headers: buildCmeHeaders() });
+    const cookieHeader = extractCookieHeader(homeResponse);
+    response = await fetch(CME_ENDPOINT, {
+      method: "POST",
+      headers: buildCmeHeaders(cookieHeader),
+    });
+  }
+
   if (!response.ok) {
     throw new Error(`CME request failed (${response.status})`);
   }
