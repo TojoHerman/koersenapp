@@ -72,9 +72,9 @@ async function fetchLiveMarketWithResilience() {
   };
 }
 
-async function getLiveMarket() {
+async function getLiveMarket({ force = false } = {}) {
   const now = Date.now();
-  if (liveCache.payload && now - liveCache.ts < CACHE_TTL_MS) {
+  if (!force && liveCache.payload && now - liveCache.ts < CACHE_TTL_MS) {
     return liveCache.payload;
   }
   const payload = await fetchLiveMarketWithResilience();
@@ -168,7 +168,9 @@ async function getGoldSpot() {
 
 app.get("/api/rates/live", async (_req, res) => {
   try {
-    const payload = await getLiveMarket();
+    const forceRaw = String(_req.query?.force ?? "").toLowerCase();
+    const force = forceRaw === "1" || forceRaw === "true" || forceRaw === "yes";
+    const payload = await getLiveMarket({ force });
     res.status(200).json(payload);
   } catch (error) {
     res.status(502).json({

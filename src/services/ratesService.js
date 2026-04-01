@@ -269,8 +269,9 @@ function buildFallbackRates() {
   return [...baseRates, ...registerRates];
 }
 
-async function getLivePayload() {
-  const response = await fetch(LIVE_RATES_ENDPOINT);
+async function getLivePayload({ force = false } = {}) {
+  const endpoint = force ? `${LIVE_RATES_ENDPOINT}?force=1` : LIVE_RATES_ENDPOINT;
+  const response = await fetch(endpoint);
   if (!response.ok) {
     throw new Error(`Live rates request failed (${response.status})`);
   }
@@ -369,9 +370,9 @@ export async function fetchInitialMarketRates() {
   }
 }
 
-export async function refreshMarketRates(currentRates) {
+export async function refreshMarketRates(currentRates, { force = false } = {}) {
   try {
-    const payload = await getLivePayload();
+    const payload = await getLivePayload({ force });
     const previousMap = new Map((currentRates || []).map((item) => [item.id, item]));
     const liveList = payload.rates.map((item) => mapLiveItemToInternal(item, previousMap.get(item.id)));
 

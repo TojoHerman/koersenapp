@@ -106,12 +106,12 @@ export default function App() {
     ratesRef.current = rates;
   }, [rates]);
 
-  const refreshRates = useCallback(async () => {
+  const refreshRates = useCallback(async ({ force = false } = {}) => {
     try {
       setLoading(true);
       setError("");
       const [marketRates, latestGoldSpot] = await Promise.all([
-        refreshMarketRates(ratesRef.current),
+        refreshMarketRates(ratesRef.current, { force }),
         fetchGoldSpotRate().catch(() => null),
       ]);
       setRates(marketRates);
@@ -478,7 +478,7 @@ export default function App() {
         <AppHeader
           isDarkMode={isDarkMode}
           onToggleTheme={() => setIsDarkMode((prev) => !prev)}
-          onRefresh={refreshRates}
+          onRefresh={() => refreshRates({ force: true })}
           isRefreshing={loading}
           lastSyncLabel={lastSyncedAt.toLocaleTimeString()}
           goldSpot={goldSpot}
